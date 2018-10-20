@@ -78,3 +78,21 @@ class outconv(nn.Module):
     def forward(self, x):
         x = self.conv(x)
 return x
+
+class up_bet(nn.Module):
+    def __init__(self, in_ch, out_ch, bilinear=True):
+        super(up, self).__init__()
+
+        #  would be a nice idea if the upsampling could be learned too,
+        #  but my machine do not have enough memory to handle all those weights
+        if bilinear:
+            self.up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
+        else:
+            self.up = nn.ConvTranspose2d(in_ch//2, in_ch//2, 2, stride=2)
+
+        self.conv = double_conv(in_ch, out_ch)
+
+    def forward(self, x1):
+        x1 = self.up(x1)
+        x = self.conv(x)
+        return x

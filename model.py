@@ -10,6 +10,9 @@ class UNet(nn.Module):
         self.down2 = down(128, 256)
         self.down3 = down(256, 512)
         self.down4 = down(512, 512)
+        self.between1 = model
+        self.between2 = model
+        self.between3 = model
         self.up1 = up(1024, 256)
         self.up2 = up(512, 128)
         self.up3 = up(256, 64)
@@ -22,9 +25,49 @@ class UNet(nn.Module):
         x3 = self.down2(x2)
         x4 = self.down3(x3)
         x5 = self.down4(x4)
-        x = self.up1(x5, x4)
+        x6, x7, x8 = self.between1(x5, x4, x3)
+        x6, x7, x8 = self.between2(x6, x7, x8)
+        x6, x7, x8 = self.between3(x6, x7, x8)
+        x = self.up1(x6, x7)
         x = self.up2(x, x3)
         x = self.up3(x, x2)
         x = self.up4(x, x1)
         x = self.outc(x)
-return x
+        return x
+
+class up_bet(nn.Module):
+    def __init__(self):
+        super(up_bet, self).__init__()
+        self.up1 = up_bet(512, 256)
+        self.up2 = up(512, 128)
+        self.up3 = up(256, 64)
+
+    def forward(self, x_low, x_mid, x_top):
+        x_low_out = self.up1(x_low)
+        x_mid_out = self.up2(x_mid, x_low_out)
+        x_top_out = self.up3(x_top, x_mid_out)
+        return x_low_out, x_mid_out, x_top_out
+
+class down_bet(nn.Module):
+    def __init__(self):
+        super(down_bet, self).__init__()
+        self.down2 = down(128, 256)
+        self.down3 = down(256, 512)
+        self.down4 = down(512, 512)
+
+    def forward(self, x_low, x_mid, x_top):
+        x_top_out = self.down2(x_top)
+        x_temp = torch.cat([x_top_out, x_mid], dim=1)
+        x_mid_out = self.down3(x_temp)
+        x_temp = torch.cat([x_mid_out, x_low])
+        x_low_out = self.down4(x_temp)
+        return x_low_out, x_mid_out, x_top_out
+
+model = nn.Sequential([up_bet(), down_bet()])
+
+
+if __name__="__main__":
+    model = UNet(3, 3)
+    x = torch.randn(1,3,224,224)
+    y = model(x)
+    print(y.size())
