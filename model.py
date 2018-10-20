@@ -1,6 +1,6 @@
 # full assembly of the sub-parts to form the complete net
 
-from .unet_parts import *
+from unet_parts import *
 
 class UNet(nn.Module):
     def __init__(self, n_channels, n_classes):
@@ -10,9 +10,9 @@ class UNet(nn.Module):
         self.down2 = down(128, 256)
         self.down3 = down(256, 512)
         self.down4 = down(512, 512)
-        self.between1 = model
-        self.between2 = model
-        self.between3 = model
+        self.between1 = bet_model()
+        self.between2 = bet_model()
+        self.between3 = bet_model()
         self.up1 = up(1024, 256)
         self.up2 = up(512, 128)
         self.up3 = up(256, 64)
@@ -38,7 +38,7 @@ class UNet(nn.Module):
 class up_bet(nn.Module):
     def __init__(self):
         super(up_bet, self).__init__()
-        self.up1 = up_bet(512, 256)
+        self.up1 = up_between(512, 256)
         self.up2 = up(512, 128)
         self.up3 = up(256, 64)
 
@@ -63,10 +63,22 @@ class down_bet(nn.Module):
         x_low_out = self.down4(x_temp)
         return x_low_out, x_mid_out, x_top_out
 
-model = nn.Sequential([up_bet(), down_bet()])
+#model = nn.Sequential([up_bet(), down_bet()])
 
 
-if __name__="__main__":
+class bet_model(nn.Module):
+    def __init__(self):
+        self.up = up_between()
+        self.down = down_between()
+
+    def forward(self, x_low, x_mid, x_top):
+        x_low, x_mid, x_top = self.up(x_low, x_mid, x_top)
+        x_low, x_mid, x_top = self.down(x_low, x_mid, x_top)
+        return x_low, x_mid, x_top
+
+
+
+if __name__=="__main__":
     model = UNet(3, 3)
     x = torch.randn(1,3,224,224)
     y = model(x)

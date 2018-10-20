@@ -77,9 +77,9 @@ class outconv(nn.Module):
 
     def forward(self, x):
         x = self.conv(x)
-return x
+        return x
 
-class up_bet(nn.Module):
+class up_between(nn.Module):
     def __init__(self, in_ch, out_ch, bilinear=True):
         super(up, self).__init__()
 
